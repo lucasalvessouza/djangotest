@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div x-data="getData()" class="">
+    {{ quotes|json_script:"quotes" }}
+    {{ authors|json_script:"authors" }}
+    <div x-model="currentQuote" class="flex p-2 justify-center flex-col">
+        <template x-if="!currentQuote">
+            <button @click="nextQuestion()" class="bg-blue-500 p-3 rounded-[8px] text-white w-50">Start the game</button>
+        </template>
+        <template x-if="currentQuote">
+            <div x-text="currentQuote.quote" class="rounded shadow mt-3 p-3"></div>
+        </template>
+        <div class="flex flex-wrap gap-3 p-3">
+            <template x-for="(author, index) in authors">
+                <div class="flex-[49%]">
+                    <template x-if="currentQuote">
+                        <button class="bg-gray-200 p-3 rounded-[8px] w-full" x-bind:class="wrongAnswers.includes(author.id) ? 'bg-red-500' : (correctAnswer === author.id ? 'bg-green-500' : (correctAnswer !== undefined && 'opacity-50'))" x-bind:disabled="correctAnswer !== undefined && correctAnswer !== author.id" x-text="author.name" @click="checkAnswer(author.id)"></button>
+                    </template>
+                </div>
+            </template>
+        </div>
+        <template x-if="currentQuote">
+            <button @click="nextQuestion()" class="bg-blue-500 p-3 rounded-[8px] text-white w-50">Next question</button>
+        </template>
+    </div>
+<script>
+
+const getData = () => ({
+    quotes: JSON.parse(JSON.parse(document.getElementById('quotes').textContent)),
+    authors: JSON.parse(JSON.parse(document.getElementById('authors').textContent)),
+    alreadyUsedIndex: [],
+    currentQuote: undefined,
+    wrongAnswers: [],
+    correctAnswer: undefined,
+    score: 0,
+    shuffleArray: (a, b) => 0.5 - Math.random(),
+    nextQuestion() {
+        this.correctAnswer = undefined
+        this.wrongAnswers = []
+        if (!this.currentQuote) {
+            this.currentQuote = this.quotes.sort(this.shuffleArray)[0]
+            return
+        }
+        this.alreadyUsedIndex.push(this.currentQuote.id)
+        const filteredQuotes = this.quotes.filter((quote) => !this.alreadyUsedIndex.includes(quote.id))
+        if (!filteredQuotes.length) {
+            alert(`Finished the game! Your score was ${this.score}/${this.quotes.length}!`)
+        }
+        this.currentQuote = filteredQuotes.sort(this.shuffleArray)[0]
+    },
+    checkAnswer(authorId) {
+        if (authorId !== this.currentQuote.author_id_id) {
+            this.wrongAnswers.push(authorId)
+            return
+        }
+        this.correctAnswer = authorId
+        this.score += 1
+    }
+})
+</script>
+</div>
+{% endblock %}
